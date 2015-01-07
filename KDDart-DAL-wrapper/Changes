@@ -1,0 +1,19 @@
+Revision history for Perl extension KDDart::DAL::wrapper.
+
+0.2.0   2014.12.19
+	- methods extended
+	- post
+	- more documentation
+	- example script
+
+0.1.2   2014.10.19
+	- get content
+	- usable version for simple operations
+
+0.1.1   2014.08.26
+	- first code structure
+	- Login should start working
+
+0.1  Tue Aug 26 14:34:48 2014
+	- original version; created by h2xs 1.23 with options -AX -n KDDart::DAL::wrapper
+

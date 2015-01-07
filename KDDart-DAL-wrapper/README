@@ -1,0 +1,57 @@
+KDDart-DAL-wrapper version 0.2.0
+=====================================================
+
+Wrapper module for KDDart DAL RESTful service with several
+utility functions
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+Not tested on Windows
+
+DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+  'LWP::UserAgent'        => 6.04,
+  'HTTP::Request::Common' => 6.0,
+  'HTTP::Cookies'         => 6.01,
+  'Digest::HMAC_SHA1'     => 1.03,
+  'Class::Tiny'           => 1.0,
+  'XML::Simple'           => 2.18,
+  'Try::Tiny'             => 0.18,
+  'JSON'                  => 2.53,
+
+TODO
+
+- More tests
+- Post with the file upload
+- More utility functions
+
+BUGS
+
+As usual
+
+AUTHOR
+
+Grzegorz Uszynski, Diversity Arrays Technology Pty Ltd
+
+COPYRIGHT AND LICENSE
+
+Copyright (C) 2014 by Diversity Arrays Technology Pty Ltd
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
