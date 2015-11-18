@@ -7,17 +7,7 @@ use warnings;
 use Digest::HMAC_SHA1 qw(hmac_sha1 hmac_sha1_hex);
 use HTTP::Request::Common qw(POST GET);
 
-use Class::Tiny qw(), {
-	writetoken    => '',         # will store write token after login
-	username      => '',         # who is logged in
-	userid        => undef,      # user numeric id
-	groupname     => '',         # current group name
-	groupid       => undef,      # current group id
-	isgroupman    => 0,          # flag if current user is group manager/owner
-	dalversion    => 0,          # dal version
-	loginexpire   => 'no',       # if DAL session should be remembered forever
-	islogin       => 0,          # login status
-};
+use Class::Tiny;
 
 # DALlogin( username => $username, password => $password, passwordcleartext => [0|1] );
 sub DALlogin {
@@ -31,7 +21,6 @@ sub DALlogin {
 	my $passwordcleartext = 0;
 	if ($args{passwordcleartext}) { $passwordcleartext = 1; }
 	
-	my ($cookiefile, $browser) = $self->_makeBrowser() unless $self->browser;
 	if ($self->error) { # problem while creating browser
 		print $self->errormsg . "\n" if $self->verbose;
 		return undef;
@@ -69,6 +58,16 @@ sub DALlogin {
 	$self->username($username);
 	$self->userid($userid);
 	$self->islogin(1);
+	
+	my $cookie_jar = $self->browser->cookie_jar;
+	
+	$cookie_jar->save;
+	
+	print $cookie_jar->as_string( 1 ) if $self->verbose;
+	
+	$cookie_jar->scan(sub {
+		$self->dalcookies->{$_[1]} = { value => $_[2], path => $_[3], domain => $_[4], expires => $_[8] };
+	});
 	
 	if ($self->autogroupswitch) {
 		my $gurl = $self->baseurl . 'list/group';
@@ -130,25 +129,29 @@ sub SwitchGroup {
 	$self->groupname( $content_ref->{Info}->[0]->{GroupName} );
 	$self->isgroupman( $TF{ $content_ref->{Info}->[0]->{GAdmin} } );
 	
-	my $vurl = $self->baseurl . 'get/version';
-	my $v_req = GET( $vurl );
-	my $v_response = $self->browser->request($v_req);
-	my $version = $self->_checkResponse( response => $v_response );
+	return $content;
+}
+
+sub SwitchExtraData {
+	my $self = shift;
+	$self->error(0);
+	$self->errormsg("");
+	
+	my $url = $self->baseurl . "switch/extradata/" . $self->extradata;
+	
+	my $switch_extradata_req = POST($url);
+	
+	my $switch_extradata_response = $self->browser->request($switch_extradata_req);
+	my $content = $self->_checkResponse( response => $switch_extradata_response );
 	
 	if ($self->error) {
-		return $version;
+		return $content;
 	}
 	
-	my $version_ref = $self->content2data(datasource => $version);
+	my $content_ref = $self->content2data(datasource => $content);
 	if ($self->error) {
-		return $version;
+		return $content;
 	}
-	
-	#print $version_ref->{Info}->[0]->{Version} . "\n\n";
-	
-	my $dalversion = $version_ref->{Info}->[0]->{Version};
-	
-	$self->dalversion($dalversion);
 	
 	return $content;
 }
@@ -175,11 +178,12 @@ sub DALlogout {
 	$self->browser('');
 	$self->writetoken('');
 	$self->username('');
-	$self->userid(undef);
+	$self->userid(-1);
 	$self->islogin(0);
-	$self->groupid(undef);
+	$self->groupid(-1);
 	$self->groupname( '' );
 	$self->isgroupman( 0 );
+	$self->dalcookies( {} );
 	
 	return $content;
 }

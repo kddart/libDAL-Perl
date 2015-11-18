@@ -11,3 +11,8 @@ lib/KDDart/DAL/wrapper/utils.pm
 lib/KDDart/DAL/wrapper/users.pm
 lib/KDDart/DAL/wrapper/content.pm
 examples/example1.pl
+examples/Utils.pm
+examples/config.json
+examples/login.pl
+examples/session1.pl
+examples/logout.pl

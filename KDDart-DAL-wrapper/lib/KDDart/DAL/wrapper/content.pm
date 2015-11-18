@@ -5,6 +5,7 @@ use strict;
 use warnings;
 
 use Digest::HMAC_SHA1 qw(hmac_sha1 hmac_sha1_hex);
+use Digest::MD5 qw(md5 md5_hex md5_base64);
 use LWP::UserAgent;
 use HTTP::Request::Common qw(POST GET);
 
@@ -18,17 +19,14 @@ sub DALgetContent {
 	$self->error(0);
 	$self->errormsg("");
 	
-	my ($cookiefile, $browser) = $self->_makeBrowser() unless $self->browser;
-	
-	my $url_ed    = $self->baseurl . "switch/extradata/" . $self->extradata;
-	my $ed_req    = POST($url_ed);
-	my $ed_res    = $self->browser->request($ed_req);
-	
-	my $ed_content = $self->_checkResponse( response => $ed_res );
+	if ($self->groupid >= 0) {
+		my $switch_content = $self->SwitchExtraData();
 		
-	if ($self->error) {
-		print "switch extradata error: $ed_content\n" if $self->verbose;
-		return $ed_content;
+		if ($self->error) {
+			$self->errormsg() .= " - could not switch extra data";
+			print "switch extradata error: $switch_content\n" if $self->verbose;
+			return $switch_content;
+		}
 	}
 	
 	my $url       = $self->baseurl . $dalurl;
@@ -47,34 +45,33 @@ sub DALgetContent {
 
 sub DALpostContent {
 	my $self       = shift;
-	my %args       = @_;
-	my $dalurl     = $args{ dalurl };  # url to send to
-	my $params     = $args{ params };  # list of parameters for the request
 	$self->error(0);
 	$self->errormsg("");
+	
+	my %args       = @_;
+	my $dalurl     = $args{ dalurl };       # url to send request to
+	my $params     = $args{ params };       # list of parameters for the request
+	
+	my $nosign     = 0;                     # do not calculate signature (so no write operations will be performed)
+	if ($args{ nosign }) { $nosign = 1; }
 	
 	if (defined $params) {
 		if (ref $params ne 'HASH') {
 			$self->error(1);
-			$self->errormsg("Expected hash ref for params");
+			$self->errormsg("Expected hash ref for parameters");
 			return undef;
 		}
 	}
 	
-	my ($cookiefile, $browser) = $self->_makeBrowser() unless $self->browser;
-	
-	my $url_ed    = $self->baseurl . "switch/extradata/" . $self->extradata;
-	my $ed_req    = POST($url_ed);
-	my $ed_res    = $self->browser->request($ed_req);
-	
-	my $ed_content = $self->_checkResponse( response => $ed_res );
+	if ($self->groupid >= 0) {
+		my $switch_content = $self->SwitchExtraData();
 		
-	if ($self->error) {
-		print "switch extradata error: $ed_content\n" if $self->verbose;
-		return $ed_content;
+		if ($self->error) {
+			$self->errormsg() .= " - could not switch extra data";
+			print "switch extradata error: $switch_content\n" if $self->verbose;
+			return $switch_content;
+		}
 	}
-	
-	my $rand = $self->_makeRandomString( -len => 16 );
 	
 	my $url  = $self->baseurl . $dalurl;
 	$url     = $self->_formatURL( url => $url );
@@ -89,25 +86,95 @@ sub DALpostContent {
 		push(@{$sending_param}, $param => "$params->{$param}");
 	}
 	
-	my $data2sign = q{};
-	$data2sign   .= "$url";
-	$data2sign   .= "$rand";
-	$data2sign   .= "$atomic_data";
+	my %upcontentformvalues = ( 'm' => 1, 'M' => 1, 'f' => 1, 'F' => 1 ); # handling lc and uc
+	my ($upcontentform, $upload, $uploadfilename, $uploadmd5);
 	
-	my $signature = hmac_sha1_hex($data2sign, $self->writetoken);
+	# file upload if requested
+	if ($args{ upcontentform }) {
+		unless (exists $upcontentformvalues{ $args{ upcontentform } }) {
+			$self->error(1);
+			$self->errormsg("Error: value for upcontentform parameter can only be f or m");
+			return undef;
+		}
+		
+		if ($nosign) {
+			$self->error(1);
+			$self->errormsg("Error: can not request file upload and no signature at the same time");
+			return undef;
+		}
+		
+		$upcontentform = lc( $args{ upcontentform } );
+		
+		if ($upcontentform eq 'm') {
+			unless ( $args{ upload } ) {
+				$self->error(1);
+				$self->errormsg("Error: No content for upload provided");
+				return undef;
+			}
+			
+			$upload = $args{ upload };
+			$uploadmd5 = md5_hex($upload);
+			push(@{$sending_param}, 'uploadfile' => [undef, 'uploadfile', 'Content' => $upload]);
+			
+		} elsif ($upcontentform eq 'f') {
+			unless ( $args{ uploadfilename } ) {
+				$self->error(1);
+				$self->errormsg("Error: No file name for upload provided");
+				return undef;
+			}
+			
+			$uploadfilename = $args{ uploadfilename };
+			
+			my $uploadfh;
+			
+			unless ( open($uploadfh, $uploadfilename) ) {
+				$self->error(1);
+				$self->errormsg("Error: File for upload provided can not be accessed");
+				return undef;
+			}
+			
+			my $md5_engine = Digest::MD5->new();
+			$md5_engine->addfile($uploadfh);
+			$uploadmd5 = $md5_engine->hexdigest();
+			close $uploadfh;
+			push(@{$sending_param}, 'uploadfile' => [$uploadfilename]);
+		}
+	}
 	
-	push(@{$sending_param}, 'rand_num'       => "$rand");
-	push(@{$sending_param}, 'url'            => "$url");
-	push(@{$sending_param}, 'signature'      => "$signature");
-	push(@{$sending_param}, 'param_order'    => "$para_order");
+	# only when calcualating signature required
+	unless ($nosign) {
+		my $rand = $self->_makeRandomString( -len => 16 );
+		
+		my $data2sign = q{};
+		$data2sign   .= "$url";
+		$data2sign   .= "$rand";
+		$data2sign   .= "$atomic_data";
+		
+		if ($uploadmd5) {
+			$data2sign   .= "$uploadmd5";
+		}
+		
+		my $signature = hmac_sha1_hex($data2sign, $self->writetoken);
+		
+		push(@{$sending_param}, 'rand_num'       => "$rand");
+		push(@{$sending_param}, 'url'            => "$url");
+		push(@{$sending_param}, 'signature'      => "$signature");
+		push(@{$sending_param}, 'param_order'    => "$para_order");
+	}
 	
-	my $post_req = POST($url, $sending_param);
+	my %postparams = ('Content' => $sending_param);
+	
+	if ($upcontentform) {
+		$postparams{ Content_Type } => 'multipart/form-data';
+	}
+	
+	my $post_req = POST($url, %postparams);
 	my $post_res = $self->browser->request($post_req);
 	
 	my $res_content = $self->_checkResponse( response => $post_res );
 		
 	if ($self->error) {
-		print "post request error: $ed_content\n" if $self->verbose;
+		print "post request error: $res_content\n" if $self->verbose;
 	}
 	
 	return $res_content;

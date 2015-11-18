@@ -10,6 +10,7 @@ WriteMakefile(
                   'HTTP::Request::Common' => 6.0,
                   'HTTP::Cookies'         => 6.01,
                   'Digest::HMAC_SHA1'     => 1.03,
+                  'Digest::MD5'           => 2.5,
                   'Class::Tiny'           => 1.0,
                   'XML::Simple'           => 2.18,
                   'Try::Tiny'             => 0.18,

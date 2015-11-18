@@ -1,5 +1,12 @@
 Revision history for Perl extension KDDart::DAL::wrapper.
 
+0.2.1   2015.11.11
+	- requires DAL 2.3
+	- post with file or memory data upload
+	- new way to handle session
+	- number of bug fixes
+	- removed example and added tests folder
+
 0.2.0   2014.12.19
 	- methods extended
 	- post
@@ -14,6 +21,6 @@ Revision history for Perl extension KDDart::DAL::wrapper.
 	- first code structure
 	- Login should start working
 
-0.1  Tue Aug 26 14:34:48 2014
+0.1     2014.08.06
 	- original version; created by h2xs 1.23 with options -AX -n KDDart::DAL::wrapper
 

@@ -9,21 +9,21 @@
 use strict;
 use KDDart::DAL::wrapper;
 use Data::Dumper;
+use Utils;
 
-unless (scalar @ARGV == 4) {
-	print "\n  Usage: perl -w $0 <dal_url> <username> <password> <groupid>\n\n";
-	exit 0;
-}
+my $CONFIG = readConfig();
 
 # SETUP your run
-my $dalbase = $ARGV[0];
-my $user    = $ARGV[1];
-my $pass    = $ARGV[2];
-my $group   = $ARGV[3];
+my $dalbase      = $CONFIG->{baseurl};
+my $user         = $CONFIG->{username};
+my $pass         = $CONFIG->{password};
+my $group        = $CONFIG->{groupid};
+my $cookiefolder = $CONFIG->{cookiefolder};
 
 # build an object (only baseurl is required)
-my $DALobj = KDDart::DAL::wrapper->new( baseurl => $dalbase, verbose => 0, autogroupswitch => 1, extradata => 0 );
-&onError("problem with object creation") if $DALobj->error;
+my $DALobj = KDDart::DAL::wrapper->new( baseurl => $dalbase, verbose => 1, autogroupswitch => 1, extradata => 0, cookiefolder => $cookiefolder );
+
+&onError("problem with object creation", $DALobj->errormsg) if $DALobj->error;
 
 my $randomstr = $DALobj->_makeRandomString( -len => 12 );
 
@@ -36,7 +36,7 @@ random string:    " . $randomstr . "
 
 # login into DAL
 my $result = $DALobj->DALlogin( username => $user, password => $pass, passwordcleartext => 1 );
-&onError($result) if $DALobj->error;
+&onError($result, $DALobj->errormsg) if $DALobj->error;
 
 print "
 # user login #
@@ -56,14 +56,22 @@ data format:      " . $DALobj->format . "
 
 unless (-e $DALobj->cookiefile) {
 	print "cookiefile does not exists!\n";
+} else {
+	print "cookie values: " . Dumper($DALobj->dalcookies) . "\n\n";
 }
 
+my $extradata = $DALobj->DALpostContent(dalurl => 'switch/extradata/0');
+&onError($extradata, $DALobj->errormsg) if $DALobj->error;
+print "\nExtract data switch to 1: " . $extradata . "\n";
+
 my $groups = $DALobj->DALgetContent( dalurl => 'list/group' );
-&onError($groups) if $DALobj->error;
+&onError($groups, $DALobj->errormsg) if $DALobj->error;
 print "\nList of groups for a user:\n" . $groups . "\n";
 
+print "\nExtradata settings: " . $DALobj->extradata . "\n";
+
 my $swgr = $DALobj->SwitchGroup(groupid => $group);
-&onError($swgr) if $DALobj->error;
+&onError($swgr, $DALobj->errormsg) if $DALobj->error;
 
 print "
 # group after switch #
@@ -76,11 +84,11 @@ group manager:    " . $DALobj->isgroupman . "
 
 # get version
 my $version = $DALobj->DALgetContent( dalurl => 'get/version' );
-&onError($version) if $DALobj->error;
+&onError($version, $DALobj->errormsg) if $DALobj->error;
 
 # convert json to perl hash
 my $versionhash = $DALobj->json2data( datasource => $version);
-&onError($versionhash) if $DALobj->error;
+&onError($versionhash, $DALobj->errormsg) if $DALobj->error;
 
 # extract version number
 my $versionNum = $versionhash->{Info}->[0]->{Version};
@@ -95,19 +103,12 @@ my $organisations = $DALobj->DALpostContent(
 		Filtering => 'OrganisationId > 0'
 	}
 );
-&onError($organisations) if $DALobj->error;
+&onError($organisations, $DALobj->errormsg) if $DALobj->error;
 
 print "Current 2 organisations on the page 1:\n" . $organisations . "\n\n";
 
 # end session, logout
 print "Logout message:\n" . $DALobj->DALlogout;
 print "Username should be empty string now: '" . $DALobj->username . "'\n";
-
-# =============================================================
-sub onError {
-	print "ERROR: " . $DALobj->errormsg . "\n";
-	print "DAL response: \n" . $_[0] . "\n\n";
-	exit 1;
-}
 
 __END__

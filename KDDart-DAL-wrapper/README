@@ -23,6 +23,7 @@ This module requires these other modules and libraries:
   'HTTP::Request::Common' => 6.0,
   'HTTP::Cookies'         => 6.01,
   'Digest::HMAC_SHA1'     => 1.03,
+  'Digest::MD5'           => 2.5,
   'Class::Tiny'           => 1.0,
   'XML::Simple'           => 2.18,
   'Try::Tiny'             => 0.18,
@@ -31,7 +32,6 @@ This module requires these other modules and libraries:
 TODO
 
 - More tests
-- Post with the file upload
 - More utility functions
 
 BUGS
@@ -44,7 +44,7 @@ Grzegorz Uszynski, Diversity Arrays Technology Pty Ltd
 
 COPYRIGHT AND LICENSE
 
-Copyright (C) 2014 by Diversity Arrays Technology Pty Ltd
+Copyright (C) 2015 by Diversity Arrays Technology Pty Ltd
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
