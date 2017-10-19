@@ -24,7 +24,7 @@ sub onError {
 
 # my $CONFIG = readConfig();
 sub readConfig {
-	open CONF, "<config.json" or die "Could not read config file\n";
+	open(CONF, "<", "config.json") or die "Could not read config file\n";
 	my @lines = <CONF>;
 	close CONF;
 	

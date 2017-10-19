@@ -59,7 +59,7 @@ sub DALpostContent {
 		if (ref $params ne 'HASH') {
 			$self->error(1);
 			$self->errormsg("Expected hash ref for parameters");
-			return undef;
+			return;
 		}
 	}
 	
@@ -94,13 +94,13 @@ sub DALpostContent {
 		unless (exists $upcontentformvalues{ $args{ upcontentform } }) {
 			$self->error(1);
 			$self->errormsg("Error: value for upcontentform parameter can only be f or m");
-			return undef;
+			return;
 		}
 		
 		if ($nosign) {
 			$self->error(1);
 			$self->errormsg("Error: can not request file upload and no signature at the same time");
-			return undef;
+			return;
 		}
 		
 		$upcontentform = lc( $args{ upcontentform } );
@@ -109,7 +109,7 @@ sub DALpostContent {
 			unless ( $args{ upload } ) {
 				$self->error(1);
 				$self->errormsg("Error: No content for upload provided");
-				return undef;
+				return;
 			}
 			
 			$upload = $args{ upload };
@@ -120,17 +120,17 @@ sub DALpostContent {
 			unless ( $args{ uploadfilename } ) {
 				$self->error(1);
 				$self->errormsg("Error: No file name for upload provided");
-				return undef;
+				return;
 			}
 			
 			$uploadfilename = $args{ uploadfilename };
 			
 			my $uploadfh;
 			
-			unless ( open($uploadfh, $uploadfilename) ) {
+			unless ( open ($uploadfh, '<', $uploadfilename) ) {
 				$self->error(1);
 				$self->errormsg("Error: File for upload provided can not be accessed");
-				return undef;
+				return;
 			}
 			
 			my $md5_engine = Digest::MD5->new();
@@ -165,7 +165,7 @@ sub DALpostContent {
 	my %postparams = ('Content' => $sending_param);
 	
 	if ($upcontentform) {
-		$postparams{ Content_Type } => 'multipart/form-data';
+		$postparams{ Content_Type } = 'multipart/form-data';
 	}
 	
 	my $post_req = POST($url, %postparams);

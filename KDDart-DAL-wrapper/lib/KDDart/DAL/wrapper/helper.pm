@@ -122,7 +122,7 @@ sub _formatURL {
 	
 	if ($args{url}) {
 		if ($self->format eq 'json') {
-			my $connector = '?';
+			my $connector = "?";
 			if ($args{url} =~ /\?/) { $connector = '&'; }
 			$args{url} .= $connector . 'ctype=json';
 		}
@@ -139,7 +139,7 @@ sub _checkResponse {
 	unless ( $args{response} ) {
 		$self->error(1);
 		$self->errormsg("Required argument 'response' not provided");
-		return undef;
+		return;
 	}
 	
 	if ($args{response}->code == 200) {

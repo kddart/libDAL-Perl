@@ -62,7 +62,7 @@ data format:      " . $DALobj->format . "
 unless (-e $DALobj->cookiefile) {
 	print "cookiefile does not exists!\n";
 } else {
-	open(DCF, $DALobj->cookiefile);
+	open(DCF, '<', $DALobj->cookiefile);
 	while(<DCF>) { print $_; }
 	close DCF;
 }

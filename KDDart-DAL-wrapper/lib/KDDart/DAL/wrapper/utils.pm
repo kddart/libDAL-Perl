@@ -30,7 +30,7 @@ sub content2data {
 	}
 	
 	if ($self->error) {
-		return undef;
+		return;
 	}
 	
 	return $data_ref;
@@ -48,14 +48,14 @@ sub xml2data {
 	unless ($data_src) {
 		$self->error(1);
 		$self->errormsg("XML data string or file not provided");
-		return undef;
+		return;
 	}
 
 	my $data_ref = eval { XMLin($data_src, ForceArray => 1) };
 	if ($@) {
 		$self->error(1);
 		$self->errormsg("XML data format corrupted: " . $@ );
-		return undef;
+		return;
 	}
 
 	if ($tag_name) {
@@ -64,7 +64,7 @@ sub xml2data {
 		} else {
 			$self->error(1);
 			$self->errormsg("tag $tag_name not present in the provided data structure");
-			return undef;
+			return;
 		}
 	} else {
 		return $data_ref;
@@ -86,7 +86,7 @@ sub json2data {
 	} catch {
 		$self->error(1);
 		$self->errormsg("Not a valid json string provided");
-		return undef;
+		return;
 	};
 	
 	if ($tag_name) {
@@ -95,7 +95,7 @@ sub json2data {
 		} else {
 			$self->error(1);
 			$self->errormsg("tag $tag_name not present in the provided data structure");
-			return undef;
+			return;
 		}
 	}
 	

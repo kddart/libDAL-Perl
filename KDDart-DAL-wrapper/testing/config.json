@@ -1,7 +1,7 @@
 {
 	"baseurl" : "http://sandbox.kddart.org/dal2.3/",
-	"username" : "admin",
-	"password" : "kddartadmin",
+	"username" : "username",
+	"password" : "yourpassword",
 	"groupid" : 0,
 	"cookiefolder" : "cookies/",
 	"cookiefile" : "cookies/cookie.dat"

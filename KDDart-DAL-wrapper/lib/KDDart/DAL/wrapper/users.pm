@@ -23,7 +23,7 @@ sub DALlogin {
 	
 	if ($self->error) { # problem while creating browser
 		print $self->errormsg . "\n" if $self->verbose;
-		return undef;
+		return;
 	}
 	
 	my $url            = $self->baseurl . "login/$username/" . $self->loginexpire;
@@ -104,7 +104,7 @@ sub SwitchGroup {
 	unless (defined $args{groupid}) {
 		$self->error(1);
 		$self->errormsg("Group id needed - not provided");
-		return undef;
+		return;
 	}
 	
 	my $url = $self->baseurl . "switch/group/$args{groupid}";
